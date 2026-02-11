@@ -1,0 +1,21 @@
+[project]
+name = "sd-traffic-transportation"
+version = "0.1.0"
+description = "San Diego traffic congestion, transit ridership, and collision safety analysis"
+requires-python = ">=3.11"
+dependencies = [
+    "duckdb>=1.1",
+    "httpx>=0.27",
+    "streamlit>=1.40",
+    "plotly>=5.18",
+    "pydeck>=0.9",
+    "pyarrow>=17.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "fastmcp>=2.12",
+    "pandas>=2.0",
+]
+
+[project.scripts]
+traffic-build = "pipeline.build:main"
+traffic-mcp = "api.mcp_server:main"
