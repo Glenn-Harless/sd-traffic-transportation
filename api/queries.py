@@ -261,24 +261,31 @@ def get_youth_pass_trends() -> list[dict]:
 # ── 11. Youth pass communities ──
 
 def get_youth_pass_communities() -> list[dict]:
-    """YOP rides by community (from raw youth_opp_pass data via aggregated)."""
-    con = duckdb.connect()
-    # Query the full processed data for community breakdown
-    path = _ROOT / "data" / "raw" / "youth_opp_pass.json"
-    if not path.exists():
+    """YOP rides by community."""
+    pq_path = Path(f"{_AGG}/youth_pass_communities.parquet")
+    if not pq_path.exists():
+        # Fallback to raw JSON if parquet not yet generated
+        path = _ROOT / "data" / "raw" / "youth_opp_pass.json"
+        if not path.exists():
+            return []
+        con = duckdb.connect()
+        df = con.execute(f"""
+            SELECT community, SUM(TRY_CAST(rides AS DOUBLE)) AS total_rides
+            FROM read_json_auto('{path}', maximum_object_size=100000000)
+            WHERE category = 'Total Rides'
+              AND community IS NOT NULL
+            GROUP BY community
+            ORDER BY total_rides DESC
+            LIMIT 25
+        """).fetchdf()
         con.close()
-        return []
-    df = con.execute(f"""
-        SELECT community, SUM(TRY_CAST(rides AS DOUBLE)) AS total_rides
-        FROM read_json_auto('{path}', maximum_object_size=100000000)
-        WHERE category = 'Total Rides'
-          AND community IS NOT NULL
-        GROUP BY community
+        return df.to_dict(orient="records")
+    return _run(f"""
+        SELECT community, total_rides
+        FROM '{pq_path}'
         ORDER BY total_rides DESC
         LIMIT 25
-    """).fetchdf()
-    con.close()
-    return df.to_dict(orient="records")
+    """)
 
 
 # ── 12. Flex fleet ──

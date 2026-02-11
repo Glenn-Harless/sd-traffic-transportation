@@ -421,7 +421,19 @@ def _build_aggregations(con: duckdb.DuckDBPyConnection) -> None:
         ORDER BY month
     """)
 
-    # 12. flex_fleet_trends — month × location × category (Total rollups)
+    # 12. youth_pass_communities — rides by community (Total Rides only)
+    _try_agg(con, "youth_pass_communities", f"""
+        SELECT
+            community,
+            SUM(rides) AS total_rides
+        FROM youth_opp_pass
+        WHERE category = 'Total Rides'
+          AND community IS NOT NULL
+        GROUP BY community
+        ORDER BY total_rides DESC
+    """)
+
+    # 13. flex_fleet_trends — month × location × category (Total rollups)
     _try_agg(con, "flex_fleet_trends", f"""
         SELECT
             month,
